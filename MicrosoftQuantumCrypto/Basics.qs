@@ -36,6 +36,54 @@ namespace Microsoft.Quantum.Crypto.Basics {
 
     ///////////// Wrappers ///////////
 
+    // Applies an X only if testable
+    operation XWrapper(input: Qubit): Unit is Ctl {
+        body (...){
+            if IsTestable() {
+                X(input);
+            }
+        }
+        adjoint auto;
+    }
+
+    operation ZWrapper(input: Qubit): Unit is Ctl {
+        body (...){
+            if IsTestable() {
+                Z(input);
+            }
+        }
+        adjoint auto;
+    }
+
+    operation HWrapper(input: Qubit): Unit is Ctl{
+        body (...){
+            if IsTestable() {
+                H(input);
+            } else {
+                H(input);
+                H(input);
+                H(input);
+                H(input);
+            }
+        }
+        adjoint auto;
+    }
+
+    operation SWrapper(input: Qubit): Unit is Ctl {
+        body (...){
+            if IsTestable() {
+                S(input);
+            } else {
+                S(input);
+                S(input);
+                S(input);
+            }
+        }
+        adjoint auto;
+    }
+
+
+
     /// # Summary
     /// Applies a single-qubit operation to each element in a register. 
     /// Wrapper to choose different operations depending on the cost metric.
@@ -71,7 +119,8 @@ namespace Microsoft.Quantum.Crypto.Basics {
                 if (IsMinimizeWidthCostMetric()){
                     ccnot_T_depth_3(control1, control2, target);
                 } else {
-                    ccnot_T_depth_1(control1, control2, target);
+                    // switch to depth 3 to be lazy
+                    ccnot_T_depth_3(control1, control2, target);
                 }
             }
         }
@@ -108,7 +157,7 @@ namespace Microsoft.Quantum.Crypto.Basics {
     ///   [ Page 3 of arXiv:1210.0974v2 ](https://arxiv.org/pdf/1210.0974v2.pdf#page=2)
     operation TDepthOneCCNOTOuterCircuit (qs : Qubit[]) : Unit is Adj + Ctl {
         EqualityFactI(Length(qs), 7, "7 qubits are expected");
-        H(qs[4]);
+        HWrapper(qs[4]);
         CNOT(qs[5], qs[1]);
         CNOT(qs[6], qs[3]);
         CNOT(qs[5], qs[2]);
@@ -121,7 +170,7 @@ namespace Microsoft.Quantum.Crypto.Basics {
 
     operation ccnot_T_depth_3 (control1 : Qubit, control2 : Qubit, target : Qubit) : Unit is Adj {
         body (...){
-            H(target);
+            HWrapper(target);
             T(control2);
             T(control1);
             T(target);
@@ -136,7 +185,7 @@ namespace Microsoft.Quantum.Crypto.Basics {
             CNOT(target, control2);
             CNOT(control1, target);
             CNOT(control2, control1);
-            H(target);
+            HWrapper(target);
         }
     }
 
@@ -170,16 +219,49 @@ namespace Microsoft.Quantum.Crypto.Basics {
     /// for AND, rather than a general CCNOTWrapper.
     operation AndWrapper(control1 : Qubit, control2 : Qubit, target : Qubit) : Unit {
         body (...){
+            // Currently we just do the same, to avoid allocation issues
             if (IsMinimizeDepthCostMetric()){
-                ApplyLowDepthAnd(control1, control2, target);
+                ExplicitAnd(control1, control2, target);
             } else {
-                ApplyAnd(control1, control2, target);
+                ExplicitAnd(control1, control2, target);
             }
         }
         controlled (controls, ...){
             (Controlled CCNOTWrapper)(controls, (control1, control2, target));
         }
         controlled adjoint auto;
+    }
+
+    operation ExplicitAnd(control1: Qubit, control2: Qubit, target: Qubit) : Unit {
+        body (...) {
+            HWrapper(target);
+            T(target);
+            CNOT(control1, target);
+            CNOT(control2, target);
+            CNOT(target, control1);
+            CNOT(target, control2);
+            Adjoint T(control1);
+            Adjoint T(control2);
+            T(target);
+            CNOT(target, control1);
+            CNOT(target, control2);
+            HWrapper(target);
+            SWrapper(target);
+        }
+        adjoint (...) {
+            HWrapper(target);
+            HWrapper(control2);
+            AssertMeasurementProbability([PauliZ, size=3], [control1, control2, target], One, 0.5, "Probability of the measurement must be 0.5", 1e-10);
+            let res = IsTestable() ? M(target) | Measure([PauliZ, size=3], [control1, control2, target]);
+            // Clumsy hack to escape the measurement-dependency bug
+            if (IsResultOne(res)) {
+                CNOT(control1, control2);
+                HWrapper(control2);
+                XWrapper(target);
+            } else {
+                HWrapper(control2);
+            }
+        }
     }
 
 
@@ -257,13 +339,13 @@ namespace Microsoft.Quantum.Crypto.Basics {
                         let highTable = table[h..Length(table)-1];
                         use q = Qubit() {
                             // Store 'all(controls) and not highBit' in q.
-                            X(highBit);
+                            XWrapper(highBit);
                             if (Length(cs) > 0){
                                  AndWrapper(cs[0], highBit, q);
                             } else {
                                 CNOT(highBit, q);
                             }
-                            X(highBit);
+                            XWrapper(highBit);
 
                             // Do lookup for half of table where highBit is 0.
                             (Controlled EqualLookup)([q], (lowTable, QuantumWrite, restAddress));
@@ -272,7 +354,7 @@ namespace Microsoft.Quantum.Crypto.Basics {
                             if (Length(cs) > 0){
                                 CNOT(cs[0], q);
                             } else {
-                                X(q);
+                                XWrapper(q);
                             }
 
                             // Do lookup for half of table where highBit is 1.
@@ -335,7 +417,7 @@ namespace Microsoft.Quantum.Crypto.Basics {
     operation ClassicalCNOT(control : Bool, target : Qubit) : Unit {
         body (...){
             if (control) {
-                X(target);
+                XWrapper(target);
             }
         }
         controlled (controls, ...){
@@ -842,7 +924,7 @@ namespace Microsoft.Quantum.Crypto.Basics {
     /// Qubit to be flipped.
     operation OppositeCheck (test : (Qubit => Unit is Ctl + Adj), result : Qubit) : Unit {
         body (...){
-            X(result);
+            XWrapper(result);
             test(result);
         }
         controlled adjoint auto;
@@ -889,7 +971,7 @@ namespace Microsoft.Quantum.Crypto.Basics {
         body (...){
             let nQubits = Length(xs);
             if (nQubits == 0){
-                X(output);
+                XWrapper(output);
             } elif (nQubits == 1){
                 CNOT(xs[0], output);
             } elif (nQubits == 2){

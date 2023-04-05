@@ -1,0 +1,4 @@
+operation,CNOT count,1-qubit Clifford count,T count,R count,M count,Full depth,initial width,extra width,comment,,,size
+Microsoft.Quantum.Crypto.ResourceEstimator.FixedEllipticCurveSignedWindowedPointAdditionEstimator,259705689,350427213,179587526,0,8807827,40471745,2852,2852,0,2852,,256
+Microsoft.Quantum.Crypto.ResourceEstimator.FixedEllipticCurveSignedWindowedPointAdditionEstimator,601784524,789643362,404344824,0,19855818,63721894,4259,4259,0,4259,,384
+Microsoft.Quantum.Crypto.ResourceEstimator.FixedEllipticCurveSignedWindowedPointAdditionEstimator,1126843903,1457358332,745527229,0,36667097,91846119,5769,5769,0,5769,,521

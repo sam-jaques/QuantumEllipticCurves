@@ -34,40 +34,52 @@ namespace Microsoft.Quantum.Crypto.ResourceEstimator
                 subFolder = "LowWidth/";
             }
 
-            int[] bigTestSizes = { 4, 8, 16, 32, 64, 110, 128, 160, 192, 224, 256, 384, 512 };
-            int[] smallSizes = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25 };
             int[] ellipticCurveTestSizes = { 110, 160, 192, 224, 256, 384, 521 };
-            int[] fixedEllipticCurveTestSizes = { 10, 30, 192, 224, 256, 384, 521 };
 
-            // construct list of bit sizes
-            List<int> exhaustiveArithmeticSizes = new List<int>();
-            List<int> exhaustiveSmallCurveSizes = new List<int>();
-            System.Random rnd = new System.Random();
-            for (int i = 4; i < 64; i++)
-            {
-                exhaustiveArithmeticSizes.Add(i);
-                exhaustiveSmallCurveSizes.Add(i);
-            }
+            // // More exhaustive set of curve sizes
+            // int[] fixedEllipticCurveTestSizes = { 10, 30, 192, 224, 256, 384, 521 };
 
-            // Checking all bit sizes between 64 and 2048 would be too many
-            // Incrementing by a fixed value might cause issues with regularities
-            // in Hamming weight, etc.; choosing random increments avoids this.
-            for (int i = 64; i <= 2048; i += 8 + rnd.Next(5))
-            {
-                exhaustiveArithmeticSizes.Add(i);
-            }
+            // Just enough curve sizes to match the previous work
+            int[] fixedEllipticCurveTestSizes = {256, 384, 521 };
 
-            exhaustiveSmallCurveSizes.AddRange(ellipticCurveTestSizes);
-
-            EstimateModularMultiplicationWindowSizes(bigTestSizes, "ModularMultiplicationWindows/" + subFolder);
-
-            EstimateArithmetic(exhaustiveArithmeticSizes.ToArray(), "ArithmeticEstimates/" + subFolder);
-            EstimateCheapModularArithmetic(exhaustiveArithmeticSizes.ToArray(), "ModularArithmeticEstimates/" + subFolder);
-            EstimateExpensiveModularArithmetic(exhaustiveSmallCurveSizes.ToArray(), "ModularArithmeticEstimates/" + subFolder);
+            // Call routines to actually 
             EstimatePointLookups(ellipticCurveTestSizes, "LookupEstimates/" + subFolder);
-            EstimateEllipticCurveArithmetic(exhaustiveSmallCurveSizes.ToArray(), "EllipticCurveEstimates/" + subFolder);
             EstimateFixedEllipticCurveArithmetic(fixedEllipticCurveTestSizes, "EllipticCurveEstimates/" + subFolder);
-        }
+
+            /*--------Other, more expensive estimates--------*/
+
+            // int[] bigTestSizes = { 4, 8, 16, 32, 64, 110, 128, 160, 192, 224, 256, 384, 512 };
+            // int[] smallSizes = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25 };
+            
+           
+            // int[] medSizes = {10, 20, 30, 40, 50, 60, 70, 80};
+
+            // // construct list of bit sizes
+            // List<int> exhaustiveArithmeticSizes = new List<int>();
+            // List<int> exhaustiveSmallCurveSizes = new List<int>();
+            // System.Random rnd = new System.Random();
+            // for (int i = 4; i < 64; i++)
+            // {
+            //     exhaustiveArithmeticSizes.Add(i);
+            //     exhaustiveSmallCurveSizes.Add(i);
+            // }
+
+            // // Checking all bit sizes between 64 and 2048 would be too many
+            // // Incrementing by a fixed value might cause issues with regularities
+            // // in Hamming weight, etc.; choosing random increments avoids this.
+            // for (int i = 64; i <= 2048; i += 8 + rnd.Next(5))
+            // {
+            //     exhaustiveArithmeticSizes.Add(i);
+            // }
+
+            // exhaustiveSmallCurveSizes.AddRange(ellipticCurveTestSizes);
+
+
+            // EstimateModularMultiplicationWindowSizes(bigTestSizes, "ModularMultiplicationWindows/" + subFolder);
+            // EstimateEllipticCurveArithmetic(exhaustiveSmallCurveSizes.ToArray(), "EllipticCurveEstimates/" + subFolder);
+            // EstimateArithmetic(fixedEllipticCurveTestSizes, "ArithmeticEstimates/" + subFolder);
+            // EstimateCheapModularArithmetic(fixedEllipticCurveTestSizes, "ModularArithmeticEstimates/" + subFolder);
+            // EstimateExpensiveModularArithmetic(fixedEllipticCurveTestSizes, "ModularArithmeticEstimates/" + subFolder);        }
 
         public static void EstimateLookup(int[] testSizes, string directory)
         {
@@ -77,12 +89,12 @@ namespace Microsoft.Quantum.Crypto.ResourceEstimator
             System.IO.Directory.CreateDirectory(directory);
 
             // Loops over controlled/not and whether it counts all gates
-            bool allGates = false;
+            bool allGates = true;
             bool isControlled = false;
-            for (int j = 0; j < 2; j++)
-            {
-                for (int i = 0; i < 2; i++)
-                {
+            // // for (int j = 0; j < 2; j++)
+            // // {
+            //     for (int i = 0; i < 2; i++)
+            //     {
                     var localControl = isControlled;
                     var localGates = allGates;
                     Thread lookupThread = new Thread(() => BasicResourceTest<LookUpEstimator>(
@@ -93,11 +105,11 @@ namespace Microsoft.Quantum.Crypto.ResourceEstimator
                         localGates,
                         true));
                     lookupThread.Start();
-                    isControlled = !isControlled;
-                }
+                //     isControlled = !isControlled;
+                // }
 
-                allGates = !allGates;
-            }
+            //     allGates = !allGates;
+            // }
         }
 
         public static void EstimateArithmetic(int[] testSizes, string directory)
@@ -108,10 +120,10 @@ namespace Microsoft.Quantum.Crypto.ResourceEstimator
             System.IO.Directory.CreateDirectory(directory);
 
             // Loops over controlled/not and whether it counts all gates
-            bool allGates = false;
+            bool allGates = true;
             bool isControlled = false;
-            for (int j = 0; j < 2; j++)
-            {
+            // for (int j = 0; j < 2; j++)
+            // {
                 for (int i = 0; i < 2; i++)
                 {
                     // Creates a new thread for each operation being estimated
@@ -165,8 +177,8 @@ namespace Microsoft.Quantum.Crypto.ResourceEstimator
                     isControlled = !isControlled;
                 }
 
-                allGates = !allGates;
-            }
+            //     allGates = !allGates;
+            // }
         }
 
         // Estimates how large an optimal window should be, by iterating through
@@ -246,10 +258,12 @@ namespace Microsoft.Quantum.Crypto.ResourceEstimator
             System.IO.Directory.CreateDirectory(directory);
 
             // Loops over whether it counts all all-gates
-            bool allGates = false;
+            bool allGates = true;
             bool isControlled = false;
-            for (int j = 0; j < 2; j++)
-            {
+            // Since we are basing this on the surface code, there is no need to 
+            // separately count T-depth vs. all depth
+            // for (int j = 0; j < 2; j++)
+            // {
                 // Creates a new thread for each operation being estimated
                 var localControl = isControlled;
                 var localGates = allGates;
@@ -265,8 +279,8 @@ namespace Microsoft.Quantum.Crypto.ResourceEstimator
                     maxWindowSizes));
                 lookupThread.Start();
 
-                allGates = !allGates;
-            }
+            //     allGates = !allGates;
+            // }
         }
 
         // Estimates window sizes for modular arithmetic
@@ -367,10 +381,10 @@ namespace Microsoft.Quantum.Crypto.ResourceEstimator
             System.IO.Directory.CreateDirectory(directory);
 
             // Loops over controlled/not and whether it counts all gates
-            bool allGates = false;
+            bool allGates = true;
             bool isControlled = false;
-            for (int j = 0; j < 2; j++)
-            {
+            // for (int j = 0; j < 2; j++)
+            // {
                 var localControl = isControlled;
                 var localGates = allGates;
                 Thread multiplyThread = new Thread(() => BasicResourceTest<MontgomeryMultiplicationEstimator>(
@@ -382,32 +396,32 @@ namespace Microsoft.Quantum.Crypto.ResourceEstimator
                     true));
                 multiplyThread.Start();
 
-                // This is run as a comparison to the windowed version
-                Thread multipyNoWindowsThread = new Thread(() => BasicResourceTest<NonWindowedMontgomeryMultiplicationEstimator>(
-                    NonWindowedMontgomeryMultiplicationEstimator.Run,
-                    testSizes,
-                    localControl,
-                    directory + "Modular-multiplication-no-windows",
-                    localGates,
-                    true));
-                multipyNoWindowsThread.Start();
+                // // This is run as a comparison to the windowed version
+                // Thread multipyNoWindowsThread = new Thread(() => BasicResourceTest<NonWindowedMontgomeryMultiplicationEstimator>(
+                //     NonWindowedMontgomeryMultiplicationEstimator.Run,
+                //     testSizes,
+                //     localControl,
+                //     directory + "Modular-multiplication-no-windows",
+                //     localGates,
+                //     true));
+                // multipyNoWindowsThread.Start();
 
-                Thread squareThread = new Thread(() => BasicResourceTest<MontgomerySquareEstimator>(
-                    MontgomerySquareEstimator.Run,
-                    testSizes,
-                    localControl,
-                    directory + "Modular-squaring",
-                    localGates,
-                    true));
-                squareThread.Start();
-                Thread invertThread = new Thread(() => BasicResourceTest<MontgomeryInversionEstimator>(
-                    MontgomeryInversionEstimator.Run,
-                    testSizes,
-                    localControl,
-                    directory + "Modular-Inversion",
-                    localGates,
-                    true));
-                invertThread.Start();
+                // Thread squareThread = new Thread(() => BasicResourceTest<MontgomerySquareEstimator>(
+                //     MontgomerySquareEstimator.Run,
+                //     testSizes,
+                //     localControl,
+                //     directory + "Modular-squaring",
+                //     localGates,
+                //     true));
+                // squareThread.Start();
+                // Thread invertThread = new Thread(() => BasicResourceTest<MontgomeryInversionEstimator>(
+                //     MontgomeryInversionEstimator.Run,
+                //     testSizes,
+                //     localControl,
+                //     directory + "Modular-Inversion",
+                //     localGates,
+                //     true));
+                // invertThread.Start();
                 Thread divideThread = new Thread(() => BasicResourceTest<ModularDivisionEstimator>(
                     ModularDivisionEstimator.Run,
                     testSizes,
@@ -416,8 +430,8 @@ namespace Microsoft.Quantum.Crypto.ResourceEstimator
                     localGates,
                     true));
                 divideThread.Start();
-                allGates = !allGates;
-            }
+            //     allGates = !allGates;
+            // }
         }
 
         // Checks only signed, windowed point addition.
@@ -430,12 +444,23 @@ namespace Microsoft.Quantum.Crypto.ResourceEstimator
             System.IO.Directory.CreateDirectory(directory);
 
             // Loops over controlled/not and whether it counts all gates
-            bool allGates = false;
+            bool allGates = true;
             bool isControlled = false;
-            for (int j = 0; j < 2; j++)
-            {
+            // Since we are basing this on the surface code, there is no need to 
+            // separately count T-depth vs. all depth            // for (int j = 0; j < 2; j++)
+            // {
                 var localControl = isControlled;
                 var localGates = allGates;
+
+                // Only check the signed, windowed point addition
+                Thread signedThread = new Thread(() => BasicResourceTest<EllipticCurveSignedWindowedPointAdditionEstimator>(
+                    EllipticCurveSignedWindowedPointAdditionEstimator.Run,
+                    testSizes,
+                    false,
+                    directory + "Windowed-point-addition-signed",
+                    localGates,
+                    true));
+                signedThread.Start();
 
                 // Constant point addition is controlled, the others are not,
                 // because in Shor's algorithm they do not need to be.
@@ -466,14 +491,7 @@ namespace Microsoft.Quantum.Crypto.ResourceEstimator
                 //     true));
                 // lowWidthThread.Start();
 
-                Thread signedThread = new Thread(() => BasicResourceTest<EllipticCurveSignedWindowedPointAdditionEstimator>(
-                    EllipticCurveSignedWindowedPointAdditionEstimator.Run,
-                    testSizes,
-                    false,
-                    directory + "Windowed-point-addition-signed",
-                    localGates,
-                    true));
-                signedThread.Start();
+                
 
                 // Thread fixedThread = new Thread(() => BasicResourceTest<FixedEllipticCurveSignedWindowedPointAdditionEstimator>(
                 //     FixedEllipticCurveSignedWindowedPointAdditionEstimator.Run,
@@ -484,8 +502,8 @@ namespace Microsoft.Quantum.Crypto.ResourceEstimator
                 //     true));
                 // fixedThread.Start();
 
-                allGates = !allGates;
-            }
+            //     allGates = !allGates;
+            // }
         }
 
         // Checks only signed, windowed point addition for which there are fixed parameters.
@@ -497,10 +515,10 @@ namespace Microsoft.Quantum.Crypto.ResourceEstimator
             System.IO.Directory.CreateDirectory(directory);
 
             // Loops over controlled/not and whether it counts all gates
-            bool allGates = false;
+            bool allGates = true;
             bool isControlled = false;
-            for (int j = 0; j < 2; j++)
-            {
+            // for (int j = 0; j < 2; j++)
+            // {
                 var localControl = isControlled;
                 var localGates = allGates;
                 Thread fixedThread = new Thread(() => BasicResourceTest<FixedEllipticCurveSignedWindowedPointAdditionEstimator>(
@@ -511,26 +529,29 @@ namespace Microsoft.Quantum.Crypto.ResourceEstimator
                     localGates,
                     true));
                 fixedThread.Start();
-                allGates = !allGates;
-            }
+            //     allGates = !allGates;
+            // }
         }
 
         /// # Summary
         /// Returns a trace simulator object that is configured
         /// to measure depth, width, and primitive operation count.
-        /// If `full_depth` is true, then it counts every gate as depth 1;
-        /// otherwise it only counts T gates
+        /// If `full_depth` is true, then it makes an attempt at accounting
+        /// for surface code depths
         private static QCTraceSimulator GetTraceSimulator(bool full_depth)
         {
             var config = new QCTraceSimulatorConfiguration();
             config.UseDepthCounter = true;
             config.UseWidthCounter = true;
             config.UsePrimitiveOperationsCounter = true;
+            // config.OptimizeDepth = true;
             if (full_depth)
-            {
-                config.TraceGateTimes[PrimitiveOperationsGroups.CNOT] = 1;
-                config.TraceGateTimes[PrimitiveOperationsGroups.Measure] = 1; // count all one and 2 qubit measurements as depth 1
-                config.TraceGateTimes[PrimitiveOperationsGroups.QubitClifford] = 1; // qubit Clifford depth 1
+            { // units are 0.5d surface code cycles
+                // The resulting depths must be halved before being interpreted
+                config.TraceGateTimes[PrimitiveOperationsGroups.T] = 9; // 4.5d for T-gate teleportation
+                config.TraceGateTimes[PrimitiveOperationsGroups.CNOT] = 6; //3d for a CNOT
+                config.TraceGateTimes[PrimitiveOperationsGroups.Measure] = 2; // d for a measurement
+                config.TraceGateTimes[PrimitiveOperationsGroups.QubitClifford] = 1; // to account for half-depths in S
             }
 
             return new QCTraceSimulator(config);
